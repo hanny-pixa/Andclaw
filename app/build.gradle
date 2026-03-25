@@ -1,0 +1,122 @@
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    id 'kotlin-kapt'
+}
+
+def localProps = new Properties()
+def f = rootProject.file("local.properties")
+if (f.exists()) {
+    f.withInputStream { localProps.load(it) }
+}
+
+android {
+    namespace 'com.andforce.andclaw'
+    compileSdk 36
+
+    def verName = project.findProperty("VERSION_NAME") ?: "1.0.7"
+    def verCode = (project.findProperty("VERSION_CODE") ?: "107") as int
+
+    defaultConfig {
+        applicationId "com.andforce.andclaw"
+        minSdk 24
+        targetSdk 36
+        versionCode verCode
+        versionName verName
+
+        multiDexEnabled true
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField "String", "KIMI_KEY", "\"${localProps.getProperty("kimi_key", "")}\""
+        buildConfigField "String", "TG_TOKEN", "\"${localProps.getProperty("tg_token", "")}\""
+    }
+
+    def storeFileProp = localProps.getProperty("store_file") ?: project.findProperty("RELEASE_STORE_FILE")
+    def storePass = localProps.getProperty("store_password") ?: project.findProperty("RELEASE_STORE_PASSWORD")
+    def keyAliasProp = localProps.getProperty("key_alias") ?: project.findProperty("RELEASE_KEY_ALIAS")
+    def keyPass = localProps.getProperty("key_password") ?: project.findProperty("RELEASE_KEY_PASSWORD")
+    def hasSigning = storeFileProp && storePass && keyAliasProp && keyPass
+
+    signingConfigs {
+        release {
+            if (hasSigning) {
+                storeFile storeFileProp?.startsWith("/") ? file(storeFileProp) : rootProject.file(storeFileProp)
+                storePassword storePass
+                keyAlias keyAliasProp
+                keyPassword keyPass
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            if (hasSigning) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+    buildFeatures {
+        viewBinding true
+        dataBinding true
+        buildConfig true
+    }
+
+    applicationVariants.configureEach { variant ->
+        variant.outputs.configureEach { output ->
+            outputFileName = "Andclaw.apk"
+        }
+    }
+}
+
+configurations.configureEach {
+    exclude group: 'com.android.support'
+}
+
+dependencies {
+    implementation project(':model')
+    implementation project(':mdm')
+    implementation project(':services')
+    implementation project(':commonUtils')
+
+    implementation libs.androidx.core.ktx
+    implementation libs.androidx.lifecycle.runtime.ktx
+    implementation libs.androidx.appcompat
+    implementation libs.material
+    implementation libs.okhttp
+    implementation libs.okhttp.logging
+    implementation libs.google.code.gson
+
+    // Room
+    implementation libs.room.runtime
+    implementation libs.room.ktx
+    kapt libs.room.compiler
+
+    // CameraX
+    implementation libs.camerax.core
+    implementation libs.camerax.camera2
+    implementation libs.camerax.lifecycle
+    implementation libs.camerax.view
+    implementation libs.camerax.video
+    implementation "com.google.guava:guava:30.1-jre"
+
+    // Koin
+    implementation "io.insert-koin:koin-core:3.3.3"
+    implementation 'io.insert-koin:koin-android:3.3.3'
+
+    testImplementation libs.junit
+    androidTestImplementation libs.androidx.junit
+    androidTestImplementation libs.androidx.espresso.core
+}

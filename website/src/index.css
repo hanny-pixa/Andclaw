@@ -1,0 +1,122 @@
+@import "tailwindcss";
+
+@theme {
+  --color-dark-base: #0a0a1a;
+  --color-dark-surface: #111827;
+  --color-dark-card: #1a1a2e;
+  --color-dark-border: #2a2a4a;
+  --color-neon-cyan: #22d3ee;
+  --color-neon-purple: #8b5cf6;
+  --color-neon-green: #4ade80;
+  --color-neon-cyan-dim: #155e75;
+  --color-neon-purple-dim: #4c1d95;
+  --color-neon-green-dim: #14532d;
+  --font-family-display: "Orbitron", sans-serif;
+  --font-family-body: "IBM Plex Sans", sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-family-body);
+  background-color: var(--color-dark-base);
+  color: #e2e8f0;
+  overflow-x: hidden;
+}
+
+::selection {
+  background-color: rgba(139, 92, 246, 0.4);
+  color: #fff;
+}
+
+/* glow utilities */
+.glow-cyan {
+  box-shadow: 0 0 15px rgba(34, 211, 238, 0.3), 0 0 40px rgba(34, 211, 238, 0.1);
+}
+.glow-purple {
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.3), 0 0 40px rgba(139, 92, 246, 0.1);
+}
+.glow-green {
+  box-shadow: 0 0 15px rgba(74, 222, 128, 0.3), 0 0 40px rgba(74, 222, 128, 0.1);
+}
+
+.text-glow-cyan {
+  text-shadow: 0 0 10px rgba(34, 211, 238, 0.5), 0 0 30px rgba(34, 211, 238, 0.2);
+}
+.text-glow-purple {
+  text-shadow: 0 0 10px rgba(139, 92, 246, 0.5), 0 0 30px rgba(139, 92, 246, 0.2);
+}
+
+/* logo breathing glow */
+@keyframes breathe {
+  0%, 100% {
+    filter: drop-shadow(0 0 12px rgba(34, 211, 238, 0.4)) drop-shadow(0 0 30px rgba(139, 92, 246, 0.2));
+  }
+  50% {
+    filter: drop-shadow(0 0 24px rgba(34, 211, 238, 0.7)) drop-shadow(0 0 50px rgba(139, 92, 246, 0.4));
+  }
+}
+.animate-breathe {
+  animation: breathe 3s ease-in-out infinite;
+}
+
+/* fade-in on scroll — transition-based for reliability */
+.fade-in-up {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+.fade-in-up.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* neon border gradient */
+.neon-border {
+  position: relative;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+.neon-border::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, var(--color-neon-cyan), var(--color-neon-purple), var(--color-neon-green));
+  z-index: -1;
+  opacity: 0.4;
+  transition: opacity 0.3s;
+}
+.neon-border:hover::before {
+  opacity: 0.8;
+}
+
+/* grid background pattern */
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(34, 211, 238, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 211, 238, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+/* circuit pattern overlay */
+.bg-circuit {
+  background-image: radial-gradient(circle at 20% 80%, rgba(139, 92, 246, 0.06) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(34, 211, 238, 0.06) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(74, 222, 128, 0.03) 0%, transparent 70%);
+}
+
+/* neon pulse on hover */
+@keyframes neonPulse {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(34, 211, 238, 0.2), 0 0 15px rgba(34, 211, 238, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(34, 211, 238, 0.4), 0 0 35px rgba(34, 211, 238, 0.2);
+  }
+}
+.hover-neon-pulse:hover {
+  animation: neonPulse 1.5s ease-in-out infinite;
+}
