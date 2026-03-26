@@ -46,17 +46,18 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
       
-    - name: Build Release APK
-      run: ./gradlew :app:assembleRelease --stacktrace
+    - name: Build Debug APK
+      run: ./gradlew :app:assembleDebug --stacktrace
       
     - name: Find and Rename APK
       run: |
         VERSION="${{ github.event.inputs.version || github.ref_name }}"
-        ls -la app/build/outputs/apk/release/
-        APK_FILE=$(find app/build/outputs/apk/release -name "*.apk" | head -1)
+        ls -la app/build/outputs/apk/debug/
+        APK_FILE=$(find app/build/outputs/apk/debug -name "*.apk" | head -1)
         if [ -f "$APK_FILE" ]; then
-          mv "$APK_FILE" app/build/outputs/apk/release/andclaw-${VERSION}.apk
+          mv "$APK_FILE" app/build/outputs/apk/debug/andclaw-${VERSION}.apk
           echo "Renamed to andclaw-${VERSION}.apk"
+          ls -la app/build/outputs/apk/debug/
         else
           echo "No APK found!"
           exit 1
@@ -65,7 +66,7 @@ jobs:
     - name: Create Release
       uses: softprops/action-gh-release@v2
       with:
-        files: app/build/outputs/apk/release/andclaw-*.apk
+        files: app/build/outputs/apk/debug/andclaw-*.apk
         draft: false
         prerelease: false
         generate_release_notes: true
