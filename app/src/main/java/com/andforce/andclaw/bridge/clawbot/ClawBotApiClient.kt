@@ -24,7 +24,7 @@ private val JSON_MEDIA = "application/json; charset=utf-8".toMediaType()
  * 1. 优化超时配置，避免首次扫码超时
  * 2. 增加连接池复用，提高连接稳定性
  * 3. 优化DNS解析超时
- * 4. 增加请求重试机制
+ * 4. 每次请求生成新的唯一UIN，避免"已有一个OpenClaw连接"问题
  *
  * - GET：`AuthorizationType`、`X-WECHAT-UIN`、可选 `Authorization: Bearer <botToken>`
  * - POST：同上，且 body 带 `base_info.channel_version`
@@ -54,17 +54,6 @@ class ClawBotApiClient(
                 .connectionPool(okhttp3.ConnectionPool(10, 5, TimeUnit.MINUTES))
                 // 重试策略：连接失败时自动重试
                 .retryOnConnectionFailure(true)
-                // 协议：优先 HTTP/2，降级到 HTTP/1.1
-                .protocols(listOf(okhttp3.Protocol.HTTP_2, okhttp3.Protocol.HTTP_1_1))
-                // DNS缓存：加速重复请求
-                .dns(object : okhttp3.Dns {
-                    private val dnsCache = java.util.concurrent.ConcurrentHashMap<String, List<java.net.InetAddress>>()
-                    override fun lookup(hostname: String): List<java.net.InetAddress> {
-                        return dnsCache.getOrPut(hostname) {
-                            okhttp3.Dns.SYSTEM.lookup(hostname)
-                        }
-                    }
-                })
                 .build()
         }
     }
@@ -73,7 +62,7 @@ class ClawBotApiClient(
         val b = okhttp3.Headers.Builder()
         b.add("Content-Type", "application/json")
         b.add("AuthorizationType", "ilink_bot_token")
-        // 优化：每次请求生成新的随机UIN，避免服务器识别为同一客户端
+        // 优化：每次请求生成新的唯一UIN，避免服务器识别为同一客户端
         b.add("X-WECHAT-UIN", generateUniqueUin())
         b.add("iLink-App-ClientVersion", "1")
         if (!botToken.isNullOrBlank()) {
@@ -94,12 +83,6 @@ class ClawBotApiClient(
     }
 
     fun getBotQrcode(baseUrl: String, botType: String, botToken: String? = null): GetBotQrcodeResponse {
-        // 优化：使用独立的短超时客户端获取二维码
-        val shortClient = httpClient.newBuilder()
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(15, TimeUnit.SECONDS)
-            .build()
-            
         val url = normalizeBaseUrl(baseUrl).newBuilder()
             .addPathSegments("ilink/bot/get_bot_qrcode")
             .addQueryParameter("bot_type", botType)
@@ -109,7 +92,7 @@ class ClawBotApiClient(
             .headers(buildHeaders(botToken))
             .get()
             .build()
-        return shortClient.newCall(req).execute().use { resp ->
+        return httpClient.newCall(req).execute().use { resp ->
             val body = resp.body.string()
             if (!resp.isSuccessful) {
                 throw ClawBotHttpException(resp.code, body)
@@ -270,7 +253,7 @@ class ClawBotApiClient(
         }
     }
 
-    fun jsonString(s: String): String =
+    private fun jsonString(s: String): String =
         buildString {
             append('"')
             for (c in s) {
