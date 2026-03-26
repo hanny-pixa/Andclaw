@@ -49,10 +49,18 @@ jobs:
     - name: Build Release APK
       run: ./gradlew :app:assembleRelease --stacktrace
       
-    - name: Rename APK
+    - name: Find and Rename APK
       run: |
         VERSION="${{ github.event.inputs.version || github.ref_name }}"
-        mv app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/andclaw-${VERSION}.apk
+        ls -la app/build/outputs/apk/release/
+        APK_FILE=$(find app/build/outputs/apk/release -name "*.apk" | head -1)
+        if [ -f "$APK_FILE" ]; then
+          mv "$APK_FILE" app/build/outputs/apk/release/andclaw-${VERSION}.apk
+          echo "Renamed to andclaw-${VERSION}.apk"
+        else
+          echo "No APK found!"
+          exit 1
+        fi
         
     - name: Create Release
       uses: softprops/action-gh-release@v2
